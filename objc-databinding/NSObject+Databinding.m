@@ -56,6 +56,8 @@ BOOL run_on_main(void (^block)(void))
       transformBlock:(void (^)(id, transform_completed_t))transformBlock
         watcherBlock:(void (^)(id, id))watcherBlock;
 
+- (void)bindNewSource:(id)sourceObject;
+
 - (void)bindToObject;
 
 - (void)unbind;
@@ -90,6 +92,15 @@ BOOL run_on_main(void (^block)(void))
     [self unbind];
 }
 
+- (void)bindNewSource:(id)sourceObject
+{
+    [self unbind];
+    
+    self.sourceObject = sourceObject;
+    
+    [self bindToObject];
+}
+
 - (void)bindToObject
 {
     if (!_isBound) {
@@ -118,14 +129,29 @@ BOOL run_on_main(void (^block)(void))
 
 - (void)transformValue:(id)value callback:(transform_completed_t)callback
 {
-    if (!value || value == [NSNull null]) {
-        value = self.defaultValue;
-    }
+    __block BOOL returned = NO;
+    id existingValue = [self.targetObject valueForKeyPath:self.targetKeyPath];
     
     if (self.transformBlock != nil) {
-        self.transformBlock(value, callback);
+        self.transformBlock(value, ^(id resultValue) {
+            returned = YES;
+            
+            if (!resultValue || resultValue == [NSNull null]) {
+                resultValue = self.defaultValue;
+            }
+            
+            callback(resultValue);
+        });
+        
+        if (!returned && existingValue == nil) {
+            callback(self.defaultValue);
+        }
     }
     else {
+        if (!value || value == [NSNull null]) {
+            value = self.defaultValue;
+        }
+        
         callback(value);
     }
 }
@@ -227,11 +253,20 @@ BOOL run_on_main(void (^block)(void))
 
 - (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object transformedByAsync:(void (^)(id, transform_completed_t))transformBlock
 {
+    [self bindKeyPath:targetKeyPath
+            toKeyPath:sourceKeyPath
+             onObject:object
+         defaultValue:nil
+   transformedByAsync:transformBlock];
+}
+
+- (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object defaultValue:(id)defaultValue transformedByAsync:(void (^)(id, transform_completed_t))transformBlock
+{
     ODBDataBinding *binding = [[ODBDataBinding alloc] initWithSource:object
                                                        sourceKeyPath:sourceKeyPath
                                                               target:self
                                                        targetKeyPath:targetKeyPath
-                                                        defaultValue:nil
+                                                        defaultValue:defaultValue
                                                       transformBlock:transformBlock
                                                         watcherBlock:nil];
     
@@ -294,6 +329,20 @@ BOOL run_on_main(void (^block)(void))
     
     // apply the binding to the source
     [binding bindToObject];
+}
+
+- (void)updateKeyPath:(NSString *)keyPath withSource:(id)source
+{
+    ODBDataBinding *oldBinding = nil;
+    NSMutableDictionary *bindings = objc_getAssociatedObject(self, KEY_PATH_BINDINGS_KEY);
+    
+    if ([bindings objectForKey:keyPath] != nil) {
+        oldBinding = [bindings objectForKey:keyPath];
+        
+        if (oldBinding) {
+            [oldBinding bindNewSource:source];
+        }
+    }
 }
 
 - (void)unbindKeyPath:(NSString *)targetKeyPath
