@@ -29,6 +29,7 @@
 		787FB8E417D04FC600A3B570 /* img-purple.png in Resources */ = {isa = PBXBuildFile; fileRef = 787FB8DE17D04FC600A3B570 /* img-purple.png */; };
 		787FB8E517D04FC600A3B570 /* img-red.png in Resources */ = {isa = PBXBuildFile; fileRef = 787FB8DF17D04FC600A3B570 /* img-red.png */; };
 		787FB8E617D04FC600A3B570 /* img-yellow.png in Resources */ = {isa = PBXBuildFile; fileRef = 787FB8E017D04FC600A3B570 /* img-yellow.png */; };
+		787FB8E917D0918000A3B570 /* UIImageView+Transition.m in Sources */ = {isa = PBXBuildFile; fileRef = 787FB8E817D0918000A3B570 /* UIImageView+Transition.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,8 @@
 		787FB8DE17D04FC600A3B570 /* img-purple.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "img-purple.png"; path = "res/img-purple.png"; sourceTree = "<group>"; };
 		787FB8DF17D04FC600A3B570 /* img-red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "img-red.png"; path = "res/img-red.png"; sourceTree = "<group>"; };
 		787FB8E017D04FC600A3B570 /* img-yellow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "img-yellow.png"; path = "res/img-yellow.png"; sourceTree = "<group>"; };
+		787FB8E717D0918000A3B570 /* UIImageView+Transition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+Transition.h"; sourceTree = "<group>"; };
+		787FB8E817D0918000A3B570 /* UIImageView+Transition.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+Transition.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +141,8 @@
 				787FB89E17CFD00500A3B570 /* Supporting Files */,
 				787FB8D517CFD6C300A3B570 /* NSObject+Databinding.h */,
 				787FB8D617CFD6C300A3B570 /* NSObject+Databinding.m */,
+				787FB8E717D0918000A3B570 /* UIImageView+Transition.h */,
+				787FB8E817D0918000A3B570 /* UIImageView+Transition.m */,
 			);
 			path = "objc-databinding";
 			sourceTree = "<group>";
@@ -307,6 +312,7 @@
 				787FB8A817CFD00500A3B570 /* AppDelegate.m in Sources */,
 				787FB8B117CFD00500A3B570 /* ViewController.m in Sources */,
 				787FB8D717CFD6C300A3B570 /* NSObject+Databinding.m in Sources */,
+				787FB8E917D0918000A3B570 /* UIImageView+Transition.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

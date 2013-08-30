@@ -12,7 +12,6 @@
 
 #define KEY_PATH_BINDINGS_KEY "objc-databinding.KEY_PATH_BINDINGS_KEY"
 #define KEY_PATH_WATCHERS_KEY "objc-databinding.KEY_PATH_WATCHERS_KEY"
-#define DEALLOC_WATCHERS_KEY "objc-databinding.DEALLOC_WATCHERS_KEY"
 
 #define LOGGING 0
 
@@ -36,34 +35,6 @@ BOOL run_on_main(void (^block)(void))
     }
 }
 
-@interface ODBDeallocCallback : NSObject
-
-@property (nonatomic, copy) void (^deallocBlock)(id);
-@property (nonatomic, unsafe_unretained) id object;
-
-- (id)initWithCallback:(void (^)(id))callback onObject:(id)object;
-
-@end
-
-@implementation ODBDeallocCallback
-
-- (id)initWithCallback:(void (^)(id))callback onObject:(id)object
-{
-    if (self = [super init]) {
-        self.deallocBlock = callback;
-        self.object = object;
-    }
-    
-    return self;
-}
-
-- (void)dealloc
-{
-    self.deallocBlock(self.object);
-}
-
-@end
-
 @interface ODBDataBinding : NSObject {
     BOOL _isBound;
 }
@@ -73,7 +44,8 @@ BOOL run_on_main(void (^block)(void))
 @property (nonatomic, retain) id defaultValue;
 @property (nonatomic, retain) NSString *targetKeyPath;
 @property (nonatomic, retain) NSString *sourceKeyPath;
-@property (nonatomic, copy) id (^transformBlock)(id);
+@property (nonatomic, assign) int permittedTransform;
+@property (nonatomic, copy) void (^transformBlock)(id, transform_completed_t);
 @property (nonatomic, copy) void (^watcherBlock)(id, id);
 
 - (id)initWithSource:(id)sourceObject
@@ -81,7 +53,7 @@ BOOL run_on_main(void (^block)(void))
               target:(id)targetObject
        targetKeyPath:(NSString *)targetKeyPath
         defaultValue:(id)defaultValue
-      transformBlock:(id (^)(id))transformBlock
+      transformBlock:(void (^)(id, transform_completed_t))transformBlock
         watcherBlock:(void (^)(id, id))watcherBlock;
 
 - (void)bindToObject;
@@ -97,7 +69,7 @@ BOOL run_on_main(void (^block)(void))
               target:(id)targetObject
        targetKeyPath:(NSString *)targetKeyPath
         defaultValue:(id)defaultValue
-      transformBlock:(id (^)(id))transformBlock
+      transformBlock:(void (^)(id, transform_completed_t))transformBlock
         watcherBlock:(void (^)(id, id))watcherBlock
 {
     if (self = [super init]) {
@@ -140,20 +112,22 @@ BOOL run_on_main(void (^block)(void))
         ODB_LOG(@"Unbinding from 0x%x (%@ -> %@)", (int)self.sourceObject, self.sourceKeyPath, self.targetKeyPath);
         
         _isBound = NO;
+        self.permittedTransform = 0;
     }
 }
 
-- (id)transformValue:(id)value
+- (void)transformValue:(id)value callback:(transform_completed_t)callback
 {
     if (!value || value == [NSNull null]) {
         value = self.defaultValue;
     }
     
     if (self.transformBlock != nil) {
-        value = self.transformBlock(value);
+        self.transformBlock(value, callback);
     }
-    
-    return value;
+    else {
+        callback(value);
+    }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -170,8 +144,6 @@ BOOL run_on_main(void (^block)(void))
             value = nil;
         }
         
-        void (^observerBlock)() = nil;
-        
         if (self.watcherBlock != nil) {
             id oldValue = [change objectForKey:NSKeyValueChangeOldKey];
             
@@ -179,20 +151,35 @@ BOOL run_on_main(void (^block)(void))
                 oldValue = nil;
             }
             
-            observerBlock = ^{
+            void (^observerBlock)() = ^{
                 self.watcherBlock(value, oldValue);
             };
+            
+            if (!run_on_main(observerBlock)) {
+                ODB_LOG(@"Changed off main thread %@ on 0x%x", keyPath, (int)object);
+            }
         }
         else {
-            value = [self transformValue:value];
+            __block ODBDataBinding *this = self;
+            int transformToken = self.permittedTransform;
             
-            observerBlock = ^{
-                [target setValue:value forKeyPath:targetKeyPath];
-            };
-        }
-        
-        if (!run_on_main(observerBlock)) {
-            ODB_LOG(@"Changed off main thread %@ on 0x%x", keyPath, (int)object);
+            self.permittedTransform = transformToken;
+            
+            [self transformValue:value callback:^(id transformedValue) {
+                void (^observerBlock)() = ^{
+                    [target setValue:transformedValue forKeyPath:targetKeyPath];
+                };
+                
+                // allow this transformation to be applied
+                if (transformToken == this.permittedTransform) {
+                    if (!run_on_main(observerBlock)) {
+                        ODB_LOG(@"Changed off main thread %@ on 0x%x", keyPath, (int)object);
+                    }
+                }
+                else {
+                    NSLog(@"Transform returned after next change %@ on 0x%x", keyPath, (int)object);
+                }
+            }];
         }
     }
 }
@@ -229,6 +216,16 @@ BOOL run_on_main(void (^block)(void))
 }
 
 - (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object transformedBy:(id (^)(id))transformBlock
+{
+    [self bindKeyPath:targetKeyPath
+            toKeyPath:sourceKeyPath
+             onObject:object
+   transformedByAsync:^(id value, transform_completed_t callback) {
+       callback(transformBlock(value));
+    }];
+}
+
+- (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object transformedByAsync:(void (^)(id, transform_completed_t))transformBlock
 {
     ODBDataBinding *binding = [[ODBDataBinding alloc] initWithSource:object
                                                        sourceKeyPath:sourceKeyPath
@@ -281,11 +278,11 @@ BOOL run_on_main(void (^block)(void))
         objc_setAssociatedObject(self, KEY_PATH_BINDINGS_KEY, bindings, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     
+    ODBDataBinding *oldBinding = nil;
+    
     // remove old binding before adding a new one
     if ([bindings objectForKey:binding.targetKeyPath] != nil) {
-        ODBDataBinding *oldBinding = [bindings objectForKey:binding.targetKeyPath];
-        
-        [oldBinding unbind];
+        oldBinding = [bindings objectForKey:binding.targetKeyPath];
         
         [bindings removeObjectForKey:binding.targetKeyPath];
     }
@@ -293,27 +290,33 @@ BOOL run_on_main(void (^block)(void))
     // attach the new binding
     [bindings setObject:binding forKey:binding.targetKeyPath];
     
+    [oldBinding unbind];
+    
     // apply the binding to the source
     [binding bindToObject];
 }
 
 - (void)unbindKeyPath:(NSString *)targetKeyPath
 {
+    ODBDataBinding *oldBinding = nil;
     NSMutableDictionary *bindings = objc_getAssociatedObject(self, KEY_PATH_BINDINGS_KEY);
     
     if ([bindings objectForKey:targetKeyPath] != nil) {
-        ODBDataBinding *oldBinding = [bindings objectForKey:targetKeyPath];
-        
-        [oldBinding unbind];
+        oldBinding = [bindings objectForKey:targetKeyPath];
         
         [bindings removeObjectForKey:targetKeyPath];
     }
+    
+    [oldBinding unbind];
 }
 
 - (void)unbindAllKeyPaths
 {
     NSMutableDictionary *bindings = objc_getAssociatedObject(self, KEY_PATH_BINDINGS_KEY);
     NSMutableDictionary *watchers = objc_getAssociatedObject(self, KEY_PATH_WATCHERS_KEY);
+    
+    objc_setAssociatedObject(self, KEY_PATH_BINDINGS_KEY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, KEY_PATH_WATCHERS_KEY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     for (ODBDataBinding *binding in bindings.allValues) {
         [binding unbind];
@@ -322,24 +325,6 @@ BOOL run_on_main(void (^block)(void))
     for (ODBDataBinding *binding in watchers) {
         [binding unbind];
     }
-    
-    objc_setAssociatedObject(self, KEY_PATH_BINDINGS_KEY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(self, KEY_PATH_WATCHERS_KEY, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-- (void)afterDeallocCall:(void (^)(id))callback
-{
-    ODBDeallocCallback *deallocCallback = [[ODBDeallocCallback alloc] initWithCallback:callback onObject:self];
-    
-    NSMutableArray *bindings = objc_getAssociatedObject(self, DEALLOC_WATCHERS_KEY);
-    
-    if (bindings == nil) {
-        bindings = [[NSMutableArray alloc] init];
-        
-        objc_setAssociatedObject(self, DEALLOC_WATCHERS_KEY, bindings, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    }
-    
-    [bindings addObject:deallocCallback];
 }
 
 @end

@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "NSObject+Databinding.h"
+#import "UIImageView+Transition.h"
 
 @interface ViewController ()
 
@@ -26,7 +27,7 @@
         self.tableView.dataSource = self;
         self.tableView.delegate = self;
         
-        [NSTimer scheduledTimerWithTimeInterval:0.05 target:self selector:@selector(changeRandomCell) userInfo:nil repeats:YES];
+        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(changeRandomCell) userInfo:nil repeats:YES];
         
         [self.view addSubview:self.tableView];
     }
@@ -107,43 +108,7 @@
         cell.imageView.contentMode = UIViewContentModeScaleAspectFill;
         cell.imageView.clipsToBounds = YES;
         
-        __block UIImageView *imageView = cell.imageView;
-        
-        // animate the swap
-        [imageView watchKeyPath:@"image" onObject:cell.imageView andCallback:^(id value, id oldValue) {
-            for (UIView *subview in [imageView subviews]) {
-                [subview removeFromSuperview];
-            }
-            
-            if (oldValue != nil) {
-                UIImageView *overlayView = [[UIImageView alloc] initWithImage:oldValue];
-                CGRect frame = CGRectMake(0, 0, imageView.frame.size.width, imageView.frame.size.height);
-                
-                // create doppleganger image view
-                overlayView.contentMode = imageView.contentMode;
-                overlayView.frame = frame;
-                overlayView.clipsToBounds = YES;
-                overlayView.alpha = 1.0;
-                
-                for (UIView *subview in [imageView subviews]) {
-                    [subview removeFromSuperview];
-                }
-                
-                [imageView addSubview:overlayView];
-                
-                // cross-fade
-                [UIView animateWithDuration:0.3 delay:0.0
-                                    options:UIViewAnimationOptionCurveEaseOut
-                                 animations:^{
-                                     overlayView.alpha = 0.0;
-                                 }
-                                 completion:^(BOOL finished) {
-                                     if (finished) {
-                                         [overlayView removeFromSuperview];
-                                     }
-                                 }];
-            }
-        }];
+        [cell.imageView setTransitionWithDuration:0.7];
     }
     
     id item = [_boundObjects objectAtIndex:indexPath.row];
@@ -153,17 +118,33 @@
 
 - (UITableViewCell *)bindCell:(UITableViewCell *)cell toItem:(id)item
 {
-    // bind data
+    // bind title
     [cell.textLabel bindKeyPath:@"text" toKeyPath:@"title" onObject:item defaultValue:@"Default"];
+    
+    // bind subtitle
     [cell.detailTextLabel bindKeyPath:@"text" toKeyPath:@"color" onObject:item defaultValue:@"n/a"];
     
+    // bind image
     cell.imageView.image = nil;
-    [cell.imageView bindKeyPath:@"image" toKeyPath:@"color" onObject:item transformedBy:^UIImage *(NSString *color) {
-        if (!color) {
-            return [UIImage imageNamed:@"img-default.png"];
+    [cell.imageView bindKeyPath:@"image" toKeyPath:@"color" onObject:item transformedByAsync:^(NSString *color, transform_completed_t callback) {
+        if (color) {
+            void (^loadBlock)() = ^{
+                callback([UIImage imageNamed:[NSString stringWithFormat:@"img-%@.png", color]]);
+            };
+            
+            // for fun, delay the load ~1/3 of th time
+            if (arc4random() % 3 == 0) {
+                callback([UIImage imageNamed:@"img-default.png"]);
+                
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0L), loadBlock);
+            }
+            else {
+                loadBlock();
+            }
         }
-        
-        return [UIImage imageNamed:[NSString stringWithFormat:@"img-%@.png", color]];
+        else {
+            callback([UIImage imageNamed:@"img-default.png"]);
+        }
     }];
     
     return cell;
