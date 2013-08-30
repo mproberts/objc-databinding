@@ -5,6 +5,49 @@ Simple KVO data binding category for `NSObject`
 
 ## Examples
 
+### UIView Binding
+
+```objective-c
+UIView *userProfileView = [[UIView alloc] init];
+
+UILabel *displayNameLabel = [[UILabel alloc] init];
+UILabel *usernameLabel = [[UILabel alloc] init];
+UIImageView *profilePic = [[UIImageView alloc] init];
+
+[userProfileView addSubview:profilePic];
+[userProfileView addSubview:displayNameLabel];
+[userProfileView addSubview:usernameLabel];
+
+// Setup layout
+// ...
+
+displayNameLabel.textBinding = @"fullName";
+usernameLabel.textBinding = @"username";
+
+// bindings can be applied even when the data types don't necessarily match
+profilePic.imageBinding = @"profilePicUrl";
+
+// just apply a binding transform and callback with the converted data
+// you can even do this asynchronously, or multiple times per change
+profilePic.imageBindingTransform = ^(NSURL *url, transform_completed_t callback) {
+    UIImage *profilePic = [UIImage imageWithData:[NSData dataWithContentsOfURL:url]];
+    
+    // don't worry about being on the UI thread when you callback
+    // you'll be put there automatically
+    callback(profilePic);
+};
+
+// default values can be supplied for any binding
+displayNameLabel.textBindingDefault = @"John Doe";
+usernameLabel.textBindingDefault = @"unknown";
+profilePic.imageBindingDefault = [UIImage imageNamed:@"default-profilepic.png"];
+
+// Just bind the data to any superview of the bound views and you're all set!
+// -------
+userProfileView.dataSource = superAwesomeUser;
+
+```
+
 ### Simple Text Binding
 
 ```objective-c
