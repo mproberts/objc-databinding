@@ -20,6 +20,8 @@ typedef void (^transform_completed_t)(id value);
 
 - (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object transformedByAsync:(void (^)(id, transform_completed_t))transformBlock;
 
+- (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object defaultValue:(id)defaultValue transformedByAsync:(void (^)(id, transform_completed_t))transformBlock;
+
 - (void)unbindKeyPath:(NSString *)targetKeyPath;
 
 - (void)watchKeyPath:(id)keyPath onObject:(id)object andCallback:(void (^)(id, id))callback;

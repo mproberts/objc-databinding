@@ -7,8 +7,10 @@
 //
 
 #import "ViewController.h"
-#import "NSObject+Databinding.h"
 #import "UIImageView+Transition.h"
+#import "ObjcDatabinding.h"
+
+#define DEMO_CELL_IDENTIFIER @"BoundObjectID"
 
 @interface ViewController ()
 
@@ -96,56 +98,59 @@
     return _boundObjects.count;
 }
 
+- (UITableViewCell *)createCell
+{
+    UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle
+                                                   reuseIdentifier:DEMO_CELL_IDENTIFIER];
+    
+    cell.imageView.frame = CGRectMake(0, 0, 44, 44);
+    cell.imageView.contentMode = UIViewContentModeScaleAspectFill;
+    cell.imageView.clipsToBounds = YES;
+    
+    [cell.imageView setTransitionWithDuration:0.7];
+    
+    cell.textLabel.textBinding = @"title";
+    
+    [cell.detailTextLabel setTextBinding:@"color" defaultValue:@"Not Available"];
+    
+    [cell.imageView setImageBinding:@"color"
+                       defaultValue:[UIImage imageNamed:@"img-default.png"]
+                      transformedBy:^(NSString *color, transform_completed_t callback) {
+                          if (color) {
+                              void (^loadBlock)() = ^{
+                                  callback([UIImage imageNamed:[NSString stringWithFormat:@"img-%@.png", color]]);
+                              };
+                              
+                              // for fun, delay the load ~1/3 of th time
+                              if (arc4random() % 3 == 0) {
+                                  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0L), loadBlock);
+                              }
+                              else {
+                                  loadBlock();
+                              }
+                          }
+                          else {
+                              callback(nil);
+                          }
+                      }];
+    
+    return cell;
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *identifier = @"BoundObjectID";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:DEMO_CELL_IDENTIFIER];
     
     if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:identifier];
-        
-        cell.imageView.frame = CGRectMake(0, 0, 44, 44);
-        cell.imageView.contentMode = UIViewContentModeScaleAspectFill;
-        cell.imageView.clipsToBounds = YES;
-        
-        [cell.imageView setTransitionWithDuration:0.7];
+        cell = [self createCell];
     }
     
     id item = [_boundObjects objectAtIndex:indexPath.row];
     
-    return [self bindCell:cell toItem:item];
-}
-
-- (UITableViewCell *)bindCell:(UITableViewCell *)cell toItem:(id)item
-{
-    // bind title
-    [cell.textLabel bindKeyPath:@"text" toKeyPath:@"title" onObject:item defaultValue:@"Default"];
-    
-    // bind subtitle
-    [cell.detailTextLabel bindKeyPath:@"text" toKeyPath:@"color" onObject:item defaultValue:@"n/a"];
-    
-    // bind image
+    // reset the image view (stops transition)
     cell.imageView.image = nil;
-    [cell.imageView bindKeyPath:@"image" toKeyPath:@"color" onObject:item transformedByAsync:^(NSString *color, transform_completed_t callback) {
-        if (color) {
-            void (^loadBlock)() = ^{
-                callback([UIImage imageNamed:[NSString stringWithFormat:@"img-%@.png", color]]);
-            };
-            
-            // for fun, delay the load ~1/3 of th time
-            if (arc4random() % 3 == 0) {
-                callback([UIImage imageNamed:@"img-default.png"]);
-                
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0L), loadBlock);
-            }
-            else {
-                loadBlock();
-            }
-        }
-        else {
-            callback([UIImage imageNamed:@"img-default.png"]);
-        }
-    }];
+    
+    cell.dataSource = item;
     
     return cell;
 }

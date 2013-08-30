@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		787E551617D0F2EC00FA4DA0 /* UIView+Databinding.m in Sources */ = {isa = PBXBuildFile; fileRef = 787E551517D0F2EC00FA4DA0 /* UIView+Databinding.m */; };
+		787E551917D0FC0200FA4DA0 /* UILabel+Databinding.m in Sources */ = {isa = PBXBuildFile; fileRef = 787E551817D0FC0200FA4DA0 /* UILabel+Databinding.m */; };
+		787E551C17D1025900FA4DA0 /* UIImageView+Databinding.m in Sources */ = {isa = PBXBuildFile; fileRef = 787E551B17D1025900FA4DA0 /* UIImageView+Databinding.m */; };
 		787FB89817CFD00500A3B570 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 787FB89717CFD00500A3B570 /* UIKit.framework */; };
 		787FB89A17CFD00500A3B570 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 787FB89917CFD00500A3B570 /* Foundation.framework */; };
 		787FB89C17CFD00500A3B570 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 787FB89B17CFD00500A3B570 /* CoreGraphics.framework */; };
@@ -43,6 +46,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		787E551417D0F2EC00FA4DA0 /* UIView+Databinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIView+Databinding.h"; sourceTree = "<group>"; };
+		787E551517D0F2EC00FA4DA0 /* UIView+Databinding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIView+Databinding.m"; sourceTree = "<group>"; };
+		787E551717D0FC0200FA4DA0 /* UILabel+Databinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UILabel+Databinding.h"; sourceTree = "<group>"; };
+		787E551817D0FC0200FA4DA0 /* UILabel+Databinding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UILabel+Databinding.m"; sourceTree = "<group>"; };
+		787E551A17D1025900FA4DA0 /* UIImageView+Databinding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+Databinding.h"; sourceTree = "<group>"; };
+		787E551B17D1025900FA4DA0 /* UIImageView+Databinding.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+Databinding.m"; sourceTree = "<group>"; };
+		787E551D17D1028F00FA4DA0 /* ObjcDatabinding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ObjcDatabinding.h; sourceTree = "<group>"; };
 		787FB89417CFD00500A3B570 /* objc-databinding.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "objc-databinding.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		787FB89717CFD00500A3B570 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		787FB89917CFD00500A3B570 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -143,6 +153,13 @@
 				787FB8D617CFD6C300A3B570 /* NSObject+Databinding.m */,
 				787FB8E717D0918000A3B570 /* UIImageView+Transition.h */,
 				787FB8E817D0918000A3B570 /* UIImageView+Transition.m */,
+				787E551417D0F2EC00FA4DA0 /* UIView+Databinding.h */,
+				787E551517D0F2EC00FA4DA0 /* UIView+Databinding.m */,
+				787E551717D0FC0200FA4DA0 /* UILabel+Databinding.h */,
+				787E551817D0FC0200FA4DA0 /* UILabel+Databinding.m */,
+				787E551A17D1025900FA4DA0 /* UIImageView+Databinding.h */,
+				787E551B17D1025900FA4DA0 /* UIImageView+Databinding.m */,
+				787E551D17D1028F00FA4DA0 /* ObjcDatabinding.h */,
 			);
 			path = "objc-databinding";
 			sourceTree = "<group>";
@@ -313,6 +330,9 @@
 				787FB8B117CFD00500A3B570 /* ViewController.m in Sources */,
 				787FB8D717CFD6C300A3B570 /* NSObject+Databinding.m in Sources */,
 				787FB8E917D0918000A3B570 /* UIImageView+Transition.m in Sources */,
+				787E551617D0F2EC00FA4DA0 /* UIView+Databinding.m in Sources */,
+				787E551917D0FC0200FA4DA0 /* UILabel+Databinding.m in Sources */,
+				787E551C17D1025900FA4DA0 /* UIImageView+Databinding.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -487,6 +507,7 @@
 				787FB8D117CFD00500A3B570 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		787FB8D217CFD00500A3B570 /* Build configuration list for PBXNativeTarget "objc-databindingTests" */ = {
 			isa = XCConfigurationList;
@@ -495,6 +516,7 @@
 				787FB8D417CFD00500A3B570 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
