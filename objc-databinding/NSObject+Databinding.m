@@ -161,7 +161,7 @@ BOOL run_on_main(void (^block)(void))
         }
         else {
             __block ODBDataBinding *this = self;
-            int transformToken = self.permittedTransform;
+            int transformToken = ++self.permittedTransform;
             
             self.permittedTransform = transformToken;
             
@@ -177,7 +177,7 @@ BOOL run_on_main(void (^block)(void))
                     }
                 }
                 else {
-                    NSLog(@"Transform returned after next change %@ on 0x%x", keyPath, (int)object);
+                    ODB_LOG(@"Transform returned after next change %@ on 0x%x", keyPath, (int)object);
                 }
             }];
         }

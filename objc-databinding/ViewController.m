@@ -27,7 +27,7 @@
         self.tableView.dataSource = self;
         self.tableView.delegate = self;
         
-        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(changeRandomCell) userInfo:nil repeats:YES];
+        [NSTimer scheduledTimerWithTimeInterval:0.025 target:self selector:@selector(changeRandomCell) userInfo:nil repeats:YES];
         
         [self.view addSubview:self.tableView];
     }
@@ -136,7 +136,7 @@
             if (arc4random() % 3 == 0) {
                 callback([UIImage imageNamed:@"img-default.png"]);
                 
-                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0L), loadBlock);
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0L), loadBlock);
             }
             else {
                 loadBlock();
