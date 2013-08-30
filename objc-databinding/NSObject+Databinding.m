@@ -8,10 +8,7 @@
 
 #import "NSObject+Databinding.h"
 #import <objc/runtime.h>
-
-#import <mach/mach.h>
-#include <sys/types.h>
-#include <sys/sysctl.h>
+#include <pthread.h>
 
 #define KEY_PATH_BINDINGS_KEY "objc-databinding.KEY_PATH_BINDINGS_KEY"
 #define KEY_PATH_WATCHERS_KEY "objc-databinding.KEY_PATH_WATCHERS_KEY"
@@ -39,7 +36,7 @@ BOOL run_on_main(void (^block)(void))
     }
 }
 
-@interface DeallocCallback : NSObject
+@interface ODBDeallocCallback : NSObject
 
 @property (nonatomic, copy) void (^deallocBlock)(id);
 @property (nonatomic, unsafe_unretained) id object;
@@ -48,7 +45,7 @@ BOOL run_on_main(void (^block)(void))
 
 @end
 
-@implementation DeallocCallback
+@implementation ODBDeallocCallback
 
 - (id)initWithCallback:(void (^)(id))callback onObject:(id)object
 {
@@ -67,7 +64,7 @@ BOOL run_on_main(void (^block)(void))
 
 @end
 
-@interface DataBinding : NSObject {
+@interface ODBDataBinding : NSObject {
     BOOL _isBound;
 }
 
@@ -93,7 +90,7 @@ BOOL run_on_main(void (^block)(void))
 
 @end
 
-@implementation DataBinding
+@implementation ODBDataBinding
 
 - (id)initWithSource:(id)sourceObject
        sourceKeyPath:(NSString *)sourceKeyPath
@@ -202,9 +199,9 @@ BOOL run_on_main(void (^block)(void))
 
 @end
 
-@interface NSObject (Private)
+@interface NSObject (ODBPrivate)
 
-- (void)applyBinding:(DataBinding *)binding;
+- (void)applyBinding:(ODBDataBinding *)binding;
 
 @end
 
@@ -220,44 +217,44 @@ BOOL run_on_main(void (^block)(void))
 
 - (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object defaultValue:(id)defaultValue
 {
-    DataBinding *binding = [[DataBinding alloc] initWithSource:object
-                                                 sourceKeyPath:sourceKeyPath
-                                                        target:self
-                                                 targetKeyPath:targetKeyPath
-                                                  defaultValue:defaultValue
-                                                transformBlock:nil
-                                                  watcherBlock:nil];
+    ODBDataBinding *binding = [[ODBDataBinding alloc] initWithSource:object
+                                                       sourceKeyPath:sourceKeyPath
+                                                              target:self
+                                                       targetKeyPath:targetKeyPath
+                                                        defaultValue:defaultValue
+                                                      transformBlock:nil
+                                                        watcherBlock:nil];
     
     [self applyBinding:binding];
 }
 
 - (void)bindKeyPath:(NSString *)targetKeyPath toKeyPath:(NSString *)sourceKeyPath onObject:(id)object transformedBy:(id (^)(id))transformBlock
 {
-    DataBinding *binding = [[DataBinding alloc] initWithSource:object
-                                                 sourceKeyPath:sourceKeyPath
-                                                        target:self
-                                                 targetKeyPath:targetKeyPath
-                                                  defaultValue:nil
-                                                transformBlock:transformBlock
-                                                  watcherBlock:nil];
+    ODBDataBinding *binding = [[ODBDataBinding alloc] initWithSource:object
+                                                       sourceKeyPath:sourceKeyPath
+                                                              target:self
+                                                       targetKeyPath:targetKeyPath
+                                                        defaultValue:nil
+                                                      transformBlock:transformBlock
+                                                        watcherBlock:nil];
     
     [self applyBinding:binding];
 }
 
 - (void)watchKeyPath:(id)keyPath onObject:(id)object andCallback:(void (^)(id, id))callback
 {
-    DataBinding *binding = [[DataBinding alloc] initWithSource:self
-                                                 sourceKeyPath:keyPath
-                                                        target:nil
-                                                 targetKeyPath:nil
-                                                  defaultValue:nil
-                                                transformBlock:nil
-                                                  watcherBlock:callback];
+    ODBDataBinding *binding = [[ODBDataBinding alloc] initWithSource:self
+                                                       sourceKeyPath:keyPath
+                                                              target:nil
+                                                       targetKeyPath:nil
+                                                        defaultValue:nil
+                                                      transformBlock:nil
+                                                        watcherBlock:callback];
     
     [self applyWatcherBinding:binding];
 }
 
-- (void)applyWatcherBinding:(DataBinding *)binding
+- (void)applyWatcherBinding:(ODBDataBinding *)binding
 {
     NSMutableArray *bindings = objc_getAssociatedObject(self, KEY_PATH_WATCHERS_KEY);
     
@@ -274,7 +271,7 @@ BOOL run_on_main(void (^block)(void))
     [binding bindToObject];
 }
 
-- (void)applyBinding:(DataBinding *)binding
+- (void)applyBinding:(ODBDataBinding *)binding
 {
     NSMutableDictionary *bindings = objc_getAssociatedObject(self, KEY_PATH_BINDINGS_KEY);
     
@@ -286,7 +283,7 @@ BOOL run_on_main(void (^block)(void))
     
     // remove old binding before adding a new one
     if ([bindings objectForKey:binding.targetKeyPath] != nil) {
-        DataBinding *oldBinding = [bindings objectForKey:binding.targetKeyPath];
+        ODBDataBinding *oldBinding = [bindings objectForKey:binding.targetKeyPath];
         
         [oldBinding unbind];
         
@@ -305,7 +302,7 @@ BOOL run_on_main(void (^block)(void))
     NSMutableDictionary *bindings = objc_getAssociatedObject(self, KEY_PATH_BINDINGS_KEY);
     
     if ([bindings objectForKey:targetKeyPath] != nil) {
-        DataBinding *oldBinding = [bindings objectForKey:targetKeyPath];
+        ODBDataBinding *oldBinding = [bindings objectForKey:targetKeyPath];
         
         [oldBinding unbind];
         
@@ -318,11 +315,11 @@ BOOL run_on_main(void (^block)(void))
     NSMutableDictionary *bindings = objc_getAssociatedObject(self, KEY_PATH_BINDINGS_KEY);
     NSMutableDictionary *watchers = objc_getAssociatedObject(self, KEY_PATH_WATCHERS_KEY);
     
-    for (DataBinding *binding in bindings.allValues) {
+    for (ODBDataBinding *binding in bindings.allValues) {
         [binding unbind];
     }
     
-    for (DataBinding *binding in watchers) {
+    for (ODBDataBinding *binding in watchers) {
         [binding unbind];
     }
     
@@ -332,7 +329,7 @@ BOOL run_on_main(void (^block)(void))
 
 - (void)afterDeallocCall:(void (^)(id))callback
 {
-    DeallocCallback *deallocCallback = [[DeallocCallback alloc] initWithCallback:callback onObject:self];
+    ODBDeallocCallback *deallocCallback = [[ODBDeallocCallback alloc] initWithCallback:callback onObject:self];
     
     NSMutableArray *bindings = objc_getAssociatedObject(self, DEALLOC_WATCHERS_KEY);
     
