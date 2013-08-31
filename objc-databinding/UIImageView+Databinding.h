@@ -7,26 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "UIView+Databinding.h"
 #import "NSObject+Databinding.h"
 
 @interface UIImageView (Databinding)
 
-- (NSString *)imageBinding;
-
-- (void)setImageBinding:(NSString *)imageBinding;
-
-- (void)setImageBinding:(NSString *)imageBinding defaultValue:(UIImage *)imageBindingDefault;
-
-- (void)setImageBinding:(NSString *)imageBinding transformedBy:(void (^)(id, transform_completed_t))transform;
-
-- (void)setImageBinding:(NSString *)imageBinding defaultValue:(UIImage *)imageBindingDefault transformedBy:(void (^)(id, transform_completed_t))transform;
-
-- (UIImage *)imageBindingDefault;
-
-- (void)setImageBindingDefault:(UIImage *)imageBindingDefault;
-
-- (void (^)(id, transform_completed_t))imageBindingTransform;
-
-- (void)setImageBindingTransform:(void (^)(id, transform_completed_t))transform;
+DEFINE_BINDABLE(@"image", image, Image, UIImage *)
 
 @end

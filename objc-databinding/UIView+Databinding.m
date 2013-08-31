@@ -121,4 +121,7 @@
    transformedByAsync:transformBlock];
 }
 
+DECLARE_BINDABLE(@"alpha", alpha, Alpha, NSNumber *)
+DECLARE_BINDABLE(@"hidden", hidden, Hidden, NSNumber *)
+
 @end

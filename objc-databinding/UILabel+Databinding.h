@@ -12,18 +12,6 @@
 
 @interface UILabel (Databinding)
 
-- (NSString *)textBinding;
-
-- (void)setTextBinding:(NSString *)textBinding;
-
-- (void)setTextBinding:(NSString *)textBinding defaultValue:(NSString *)textBindingDefault;
-
-- (NSString *)textBindingDefault;
-
-- (void)setTextBindingDefault:(NSString *)textBindingDefault;
-
-- (void (^)(id, transform_completed_t))textBindingTransform;
-
-- (void)setTextBindingTransform:(void (^)(id, transform_completed_t))transform;
+DEFINE_BINDABLE(@"text", text, Text, NSString *)
 
 @end

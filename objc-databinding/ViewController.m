@@ -109,11 +109,11 @@
     
     [cell.imageView setTransitionWithDuration:0.7];
     
-    cell.textLabel.textBinding = @"title";
+    cell.textLabel.textKeyPath = @"title";
     
-    [cell.detailTextLabel setTextBinding:@"color" defaultValue:@"Not Available"];
+    [cell.detailTextLabel setTextKeyPath:@"color" defaultValue:@"Not Available"];
     
-    [cell.imageView setImageBinding:@"color"
+    [cell.imageView setImageKeyPath:@"color"
                        defaultValue:[UIImage imageNamed:@"img-default.png"]
                       transformedBy:^(NSString *color, transform_completed_t callback) {
                           if (color) {
