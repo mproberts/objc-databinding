@@ -21,15 +21,15 @@ UIImageView *profilePic = [[UIImageView alloc] init];
 // Setup layout
 // ...
 
-displayNameLabel.textBinding = @"fullName";
-usernameLabel.textBinding = @"username";
+displayNameLabel.textKeyPath = @"fullName";
+usernameLabel.textKeyPath = @"username";
 
 // bindings can be applied even when the data types don't necessarily match
-profilePic.imageBinding = @"profilePicUrl";
+profilePic.imageKeyPath = @"profilePicUrl";
 
 // just apply a binding transform and callback with the converted data
 // you can even do this asynchronously, or multiple times per change
-profilePic.imageBindingTransform = ^(NSURL *url, transform_completed_t callback) {
+profilePic.imageTransform = ^(NSURL *url, transform_completed_t callback) {
     UIImage *profilePic = [UIImage imageWithData:[NSData dataWithContentsOfURL:url]];
     
     // don't worry about being on the UI thread when you callback
@@ -38,9 +38,9 @@ profilePic.imageBindingTransform = ^(NSURL *url, transform_completed_t callback)
 };
 
 // default values can be supplied for any binding
-displayNameLabel.textBindingDefault = @"John Doe";
-usernameLabel.textBindingDefault = @"unknown";
-profilePic.imageBindingDefault = [UIImage imageNamed:@"default-profilepic.png"];
+displayNameLabel.textDefault = @"John Doe";
+usernameLabel.textDefault = @"unknown";
+profilePic.imageDefault = [UIImage imageNamed:@"default-profilepic.png"];
 
 // Just bind the data to any superview of the bound views and you're all set!
 // -------
