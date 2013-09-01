@@ -104,12 +104,23 @@ BOOL run_on_main(void (^block)(void))
 - (void)bindToObject
 {
     if (!_isBound) {
-        [self.sourceObject addObserver:self
-                            forKeyPath:self.sourceKeyPath
-                               options:NSKeyValueObservingOptionNew
-                                      |NSKeyValueObservingOptionOld
-                                      |NSKeyValueObservingOptionInitial
-                               context:NULL];
+        if (self.sourceObject) {
+            [self.sourceObject addObserver:self
+                                forKeyPath:self.sourceKeyPath
+                                   options:NSKeyValueObservingOptionNew
+                                          |NSKeyValueObservingOptionOld
+                                          |NSKeyValueObservingOptionInitial
+                                   context:NULL];
+        }
+        else {
+            [self observeValueForKeyPath:self.sourceKeyPath
+                                ofObject:self.sourceObject
+                                  change:@{
+                                     NSKeyValueChangeOldKey: [NSNull null],
+                                     NSKeyValueChangeNewKey: [NSNull null]
+                                 }
+                                 context:NULL];
+        }
         
         _isBound = YES;
     }
